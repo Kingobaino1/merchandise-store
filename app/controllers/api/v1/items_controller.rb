@@ -23,13 +23,24 @@ class Api::V1::ItemsController < ApplicationController
   end
 
   def price
-    total = 0
+    mug_discount = 0
+    tshirt_discount = 0
+    zero_discount = 0
     currency = ''
     query_params['items'].each do |item|
       item_price = Item.find_by(code: item)
-      total += item_price.price.to_f
       currency = item_price.price[-1]
+      count = query_params['items'].count(item)
+      if item_price.code == 'MUG' && count >= 2
+        mug_count = query_params['items'].count(item)  - 1
+        mug_discount = mug_count * item_price.price.to_f
+      elsif (item_price.code == 'TSHIRT' && count >= 3)
+        tshirt_discount = 0.7 * item_price.price.to_f * count
+      else
+        zero_discount += item_price.price.to_f
+      end
     end
+    total = mug_discount + tshirt_discount + zero_discount
     sum = total.to_s + currency
     render json: { Items: query_params['items'], Total: sum }
   end 
